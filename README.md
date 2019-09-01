@@ -22,7 +22,7 @@ Both are available via [Homebrew](https://brew.sh/) on Mac
 
 ##### 2. Download raw data
 
-`./download_raw_data.sh && ./remove_bad_rows.sh`
+`./download_raw_yellow.sh && ./remove_bad_rows.sh`
 
 The `remove_bad_rows.sh` script fixes two particular files that have a few rows with too many columns. See the "data issues" section below for more.
 

@@ -27,33 +27,33 @@ yellow_schema_2019_h1="(vendor_id,tpep_pickup_datetime,tpep_dropoff_datetime,pas
 # if 2010-02 and 2010-03 yellow files give errors about extra columns, remove offending rows:
 # ./remove_bad_rows.sh
 
-for filename in data/green_tripdata*.csv; do
-  [[ $filename =~ $year_month_regex ]]
-  year=${BASH_REMATCH[1]}
-  month=$((10#${BASH_REMATCH[2]}))
+# for filename in data/green_tripdata*.csv; do
+#   [[ $filename =~ $year_month_regex ]]
+#   year=${BASH_REMATCH[1]}
+#   month=$((10#${BASH_REMATCH[2]}))
 
-  if [ $year -lt 2015 ]; then
-    schema=$green_schema_pre_2015
-  elif [ $year -eq 2015 ] && [ $month -lt 7 ]; then
-    schema=$green_schema_2015_h1
-  elif [ $year -eq 2015 ] || ([ $year -eq 2016 ] && [ $month -lt 7 ]); then
-    schema=$green_schema_2015_h2_2016_h1
-  elif [ $year -eq 2016 ] && [ $month -gt 6 ]; then
-    schema=$green_schema_2016_h2
-  elif [ $year -lt 2019 ]; then
-    schema=$green_schema_2017_h1
-  else
-    schema=$green_schema_2019_h1
-  fi
+#   if [ $year -lt 2015 ]; then
+#     schema=$green_schema_pre_2015
+#   elif [ $year -eq 2015 ] && [ $month -lt 7 ]; then
+#     schema=$green_schema_2015_h1
+#   elif [ $year -eq 2015 ] || ([ $year -eq 2016 ] && [ $month -lt 7 ]); then
+#     schema=$green_schema_2015_h2_2016_h1
+#   elif [ $year -eq 2016 ] && [ $month -gt 6 ]; then
+#     schema=$green_schema_2016_h2
+#   elif [ $year -lt 2019 ]; then
+#     schema=$green_schema_2017_h1
+#   else
+#     schema=$green_schema_2019_h1
+#   fi
 
-  echo "`date`: beginning load for ${filename}"
-  sed $'s/\r$//' $filename | sed '/^$/d' | psql nyc-taxi-data -c "COPY green_tripdata_staging ${schema} FROM stdin CSV HEADER;"
-  echo "`date`: finished raw load for ${filename}"
-  psql nyc-taxi-data -f setup_files/populate_green_trips.sql
-  echo "`date`: loaded trips for ${filename}"
-done;
+#   echo "`date`: beginning load for ${filename}"
+#   sed $'s/\r$//' $filename | sed '/^$/d' | psql nyc-taxi-data -c "COPY green_tripdata_staging ${schema} FROM stdin CSV HEADER;"
+#   echo "`date`: finished raw load for ${filename}"
+#   psql nyc-taxi-data -f setup_files/populate_green_trips.sql
+#   echo "`date`: loaded trips for ${filename}"
+# done;
 
-for filename in data/yellow_tripdata*.csv; do
+for filename in data/yellow_tripdata_2015*.csv; do
   [[ $filename =~ $year_month_regex ]]
   year=${BASH_REMATCH[1]}
   month=$((10#${BASH_REMATCH[2]}))
@@ -71,10 +71,10 @@ for filename in data/yellow_tripdata*.csv; do
   fi
 
   echo "`date`: beginning load for ${filename}"
-  sed $'s/\r$//' $filename | sed '/^$/d' | psql nyc-taxi-data -c "COPY yellow_tripdata_staging ${schema} FROM stdin CSV HEADER;"
+  sed $'s/\r$//' $filename | sed '/^$/d' | psql -h 172.27.168.233 -p 5434 -U docker nyc-taxi-data -c "COPY yellow_tripdata_staging ${schema} FROM stdin CSV HEADER;"
   echo "`date`: finished raw load for ${filename}"
-  psql nyc-taxi-data -f setup_files/populate_yellow_trips.sql
+  psql -h 172.27.168.233 -p 5434 -U docker nyc-taxi-data -f setup_files/populate_yellow_trips.sql
   echo "`date`: loaded trips for ${filename}"
 done;
 
-psql nyc-taxi-data -c "CREATE INDEX ON trips USING BRIN (pickup_datetime) WITH (pages_per_range = 32);"
+psql -h 172.27.168.233 -p 5434 -U docker nyc-taxi-data -c "CREATE INDEX ON trips USING BRIN (pickup_datetime) WITH (pages_per_range = 32);"
